@@ -181,7 +181,7 @@ public:
     template<typename... Args>
     iterator Emplace(const_iterator pos, Args &&... args);
 
-    iterator Erase(const_iterator pos) noexcept(std::is_nothrow_move_assignable_v<T>);
+    iterator Erase(const_iterator pos);
 
     iterator Insert(const_iterator pos, const T &item);
 
@@ -349,12 +349,17 @@ template<typename T>
 template<typename... Args>
 T &Vector<T>::EmplaceBack(Args &&... args) {
     if (size_ == Capacity()) {
-        RawMemory<T> new_data{size_ == 0 ? 1 : size_ * 2};
-        new(new_data + size_) T(std::forward<Args>(args)...);
-        SafeMove(data_.GetAddress(), size_, new_data.GetAddress());
+        RawMemory<T> new_data(size_ == 0 ? 1 : size_ * 2);
+        new (new_data + size_) T(std::forward<Args>(args)...);
+        if constexpr (std::is_nothrow_move_constructible_v<T> || !std::is_copy_constructible_v<T>) {
+            std::uninitialized_move_n(data_.GetAddress(), size_, new_data.GetAddress());
+        } else {
+            std::uninitialized_copy_n(data_.GetAddress(), size_, new_data.GetAddress());
+        }
+        std::destroy_n(data_.GetAddress(), size_);
         data_.Swap(new_data);
     } else {
-        new(data_ + size_) T(std::forward<Args>(args)...);
+        new (data_ + size_) T(std::forward<Args>(args)...);
     }
     ++size_;
     return data_[size_ - 1];
@@ -384,13 +389,11 @@ typename Vector<T>::iterator Vector<T>::Insert(const_iterator pos, T &&value) {
 }
 
 template<typename T>
-typename Vector<T>::iterator Vector<T>::Erase(const_iterator pos)
-noexcept(std::is_nothrow_move_assignable_v<T>) {
+typename Vector<T>::iterator Vector<T>::Erase(const_iterator pos) {
     assert(pos >= begin() && pos <= end());
     assert(size_ > 0);
     auto index = static_cast<size_t>(pos - begin());
     std::move(begin() + index + 1, end(), begin() + index);
-    data_[size_ - 1].~T();
     PopBack();
     return begin() + index;
 }
