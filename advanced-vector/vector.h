@@ -365,7 +365,7 @@ T& Vector<T>::EmplaceBack(Args &&... args) {
 			}
 		}
 		catch (...) {
-			std::destroy_n(new_data.GetAddress(), size_);
+			delete (new_data + size_);
 			throw;
 		}
 		std::destroy_n(data_.GetAddress(), size_);
