@@ -365,8 +365,8 @@ T& Vector<T>::EmplaceBack(Args &&... args) {
 			}
 		}
 		catch (...) {
-          delete sp_var;
-          throw;
+            ::operator delete(sp_var);
+            throw;
 		}
 		std::destroy_n(data_.GetAddress(), size_);
 		data_.Swap(new_data);
