@@ -378,29 +378,6 @@ T& Vector<T>::EmplaceBack(Args &&... args) {
 	return data_[size_ - 1];
 }
 
-//template <typename T>
-//template <typename... Args>
-//T& Vector<T>::EmplaceBack(Args&&... args) {
-//    if (data_.Capacity() <= size_) {
-//        RawMemory<T> new_data(size_ == 0 ? 1 : size_ * 2);
-//        new (new_data.GetAddress() + size_) T(std::forward<Args>(args)...);
-//        if constexpr (std::is_nothrow_move_constructible_v<T> || !std::is_copy_constructible_v<T>) {
-//            std::uninitialized_move_n(data_.GetAddress(), size_, new_data.GetAddress());
-//        }
-//        else {
-//            std::uninitialized_copy_n(data_.GetAddress(), size_, new_data.GetAddress());
-//        }
-//        std::destroy_n(data_.GetAddress(), size_);
-//        data_.Swap(new_data);
-//
-//    }
-//    else {
-//        new (data_.GetAddress() + size_) T(std::forward<Args>(args)...);
-//    }
-//
-//    return data_[size_++];
-//}
-
 template<typename T>
 template<typename... Args>
 typename Vector<T>::iterator Vector<T>::Emplace(const_iterator pos, Args &&... args) {
